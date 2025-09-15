@@ -10,7 +10,53 @@ module.exports = {
   ],
   presets: [require("nativewind/preset")],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        'satoshi': ['Satoshi', 'sans-serif'],
+      },
+      colors: {
+        'primary': 'var(--color-primary)',
+        'secondary': 'var(--color-secondary)',
+        'accent': 'var(--color-accent)',
+        'cards': 'var(--color-cards)',
+        'padding': 'var(--color-padding)',
+        'validation': 'var(--color-validation)',
+        'invalidation': 'var(--color-invalidation)',
+        'novalidation': 'var(--color-novalidation)',
+        'text': {
+          'primary': 'var(--color-text-primary)',
+          'secondary': 'var(--color-text-secondary)',
+          'muted': 'var(--color-text-muted)',
+        },
+        'background': {
+          'DEFAULT': 'var(--color-background)',
+        }
+      },
+      spacing: {
+        'xs': 'var(--spacing-xs)',
+        'sm': 'var(--spacing-sm)',
+        'md': 'var(--spacing-md)',
+        'lg': 'var(--spacing-lg)',
+        'xl': 'var(--spacing-xl)',
+        'app-h': 'var(--app-padding-horizontal)',
+        'app-v': 'var(--app-padding-vertical)',
+        'app-top': 'var(--app-padding-top)',
+      },
+      fontSize: {
+        'xs': 'var(--font-size-xs)',
+        'sm': 'var(--font-size-sm)',
+        'base': 'var(--font-size-base)',
+        'lg': 'var(--font-size-lg)',
+        'xl': 'var(--font-size-xl)',
+        '2xl': 'var(--font-size-2xl)',
+      },
+      borderRadius: {
+        'sm': 'var(--border-radius-sm)',
+        'md': 'var(--border-radius-md)',
+        'lg': 'var(--border-radius-lg)',
+        'xl': 'var(--border-radius-xl)',
+      }
+    },
   },
   plugins: [],
 }

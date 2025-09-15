@@ -1,3 +1,57 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  
+  :root {
+    /* Variables de couleurs */
+    --color-primary: #121418;
+    --color-secondary: #6283FA;
+    --color-accent: #4D4D4D;
+    --color-cards: #2A2A2A;
+    --color-padding: rgba(255, 0, 0, 0.5);
+    
+    /* Variables de texte */
+    --color-text-primary: #FFFFFF;
+    --color-text-secondary: #BFBFBF;
+    --color-text-muted: #9CA3AF;
+    
+    /* Variables de background */
+    --color-background: #FFFFFF;
+
+    /*Other custom*/
+    --color-validation: #58FAAE;
+    --color-invalidation: #FA7272;
+    --color-novalidation: #FF6A00;
+    
+    /* Variables d'espacement */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+    
+    /* Variables de taille de police */
+    --font-size-xs: 12px;
+    --font-size-sm: 14px;
+    --font-size-base: 16px;
+    --font-size-lg: 18px;
+    --font-size-xl: 20px;
+    --font-size-2xl: 24px;
+    
+    /* Variables de border radius */
+    --border-radius-sm: 4px;
+    --border-radius-md: 8px;
+    --border-radius-lg: 12px;
+    --border-radius-xl: 16px;
+  }
+
+  /* Font face definition */
+  @font-face {
+    font-family: 'Satoshi';
+    src: url('./assets/fonts/Satoshi-Regular.otf') format('opentype');
+    font-weight: normal;
+    font-style: normal;
+  }
+}
