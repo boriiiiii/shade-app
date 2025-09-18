@@ -19,7 +19,7 @@ export default function log_in() {
   };
 
   return (
-    <View className="flex-1 px-[21px] pb-[21px] pt-[60px] bg-red-400">
+    <View className="flex-1 px-[21px] pb-[21px] pt-[60px] bg-primary">
       <View className="flex-1 bg-primary">
         <View className="flex-1">
           <View className="flex-row items-center relative">
