@@ -4,7 +4,7 @@ import Lock from "@/assets/lock";
 export default function WelcomeSlide4() {
   return (
     <View className="flex-1">
-      <View className="flex-1 justify-start mt-[146px]">
+      <View className="flex-1 justify-start mt-[15%]">
         <Text className="text-white text-2xl font-satoshi leading-relaxed mb-[18px]">
           Connect multiple wallets
         </Text>
