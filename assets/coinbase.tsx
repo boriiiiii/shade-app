@@ -1,11 +1,16 @@
 import * as React from "react"
 import Svg, { Path } from "react-native-svg"
 
-export default function Coinbase() {
+interface CoinbaseProps {
+  width?: number;
+  height?: number;
+}
+
+export default function Coinbase({ width = 20, height = 20 }: CoinbaseProps) {
   return (
     <Svg
-      width={20}
-      height={20}
+      width={width}
+      height={height}
       viewBox="0 0 20 20"
       fill="none"
     >

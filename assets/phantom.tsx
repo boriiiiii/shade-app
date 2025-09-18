@@ -1,11 +1,16 @@
 import * as React from "react"
 import Svg, { Path } from "react-native-svg"
 
-export default function Phantom() {
+interface PhantomProps {
+  width?: number;
+  height?: number;
+}
+
+export default function Phantom({ width = 20, height = 16 }: PhantomProps) {
   return (
     <Svg
-      width={20}
-      height={16}
+      width={width}
+      height={height}
       viewBox="0 0 20 16"
       fill="none"
     >

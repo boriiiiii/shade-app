@@ -8,7 +8,7 @@ import Metamask from "@/assets/metamask";
 import Binance from "@/assets/binance";
 import Phantom from "@/assets/phantom";
 
-// TO DO 
+// TO DO
 // REFAIRE LES PROPORTIONS => CALCUL POURCENTAGE => FIGMA THEN CODE
 
 export default function log_in() {
@@ -33,38 +33,37 @@ export default function log_in() {
             </View>
           </View>
           <View className="mt-[126px] justify-center items-center">
-            <Text className="text-white font-satoshi text-2xl">
-              Connect a wallet
+            <Text className="text-white font-satoshi text-3xl">
+              Connect with your wallet
             </Text>
-            <Text className="text-text-secondary font-satoshi">
+            <Text className="text-text-secondary font-satoshi font-light mt-[16px] mb-[40px] text-xl">
               you can connect more later
             </Text>
-
-            <View className="w-4/5">
-              <TouchableOpacity className="bg-[#2A2A2A] rounded-2xl px-6 py-4 flex-row items-center">
-                <Coinbase />
-                <Text className="text-white font-satoshi text-lg ml-4">
+            <View className="w-[85%]">
+              <TouchableOpacity className="bg-[#2A2A2A] rounded-3xl px-6 h-[60px] flex-row items-center">
+                <Coinbase width={28} height={28} />
+                <Text className="text-white font-satoshi font-medium text-xl ml-4">
                   Coinbase
                 </Text>
               </TouchableOpacity>
 
-              <TouchableOpacity className="bg-[#2A2A2A] rounded-2xl px-6 py-4 flex-row items-center mt-4">
-                <Metamask />
-                <Text className="text-white font-satoshi text-lg ml-4">
+              <TouchableOpacity className="bg-[#2A2A2A] rounded-3xl px-6 h-[60px] flex-row items-center mt-[20px]">
+                <Metamask width={28} height={28} />
+                <Text className="text-white font-satoshi font-medium text-xl ml-4">
                   Metamask
                 </Text>
               </TouchableOpacity>
 
-              <TouchableOpacity className="bg-[#2A2A2A] rounded-2xl px-6 py-4 flex-row items-center mt-4">
-                <Binance />
-                <Text className="text-white font-satoshi text-lg ml-4">
+              <TouchableOpacity className="bg-[#2A2A2A] rounded-3xl px-6 h-[60px] flex-row items-center mt-[20px]">
+                <Binance width={28} height={28} />
+                <Text className="text-white font-satoshi font-medium text-xl ml-4">
                   Binance
                 </Text>
               </TouchableOpacity>
 
-              <TouchableOpacity className="bg-[#2A2A2A] rounded-2xl px-6 py-4 flex-row items-center mt-4">
-                <Phantom />
-                <Text className="text-white font-satoshi text-lg ml-4">
+              <TouchableOpacity className="bg-[#2A2A2A] rounded-3xl px-6 h-[60px] flex-row items-center mt-[20px]">
+                <Phantom width={28} height={28} />
+                <Text className="text-white font-satoshi font-medium text-xl ml-4">
                   Phantom
                 </Text>
               </TouchableOpacity>

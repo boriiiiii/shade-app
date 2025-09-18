@@ -1,11 +1,16 @@
 import * as React from "react"
 import Svg, { G, Path, Defs, ClipPath } from "react-native-svg"
 
-export default function Metamask() {
+interface MetamaskProps {
+  width?: number;
+  height?: number;
+}
+
+export default function Metamask({ width = 20, height = 19 }: MetamaskProps) {
   return (
     <Svg
-      width={20}
-      height={19}
+      width={width}
+      height={height}
       viewBox="0 0 20 19"
       fill="none"
     >
