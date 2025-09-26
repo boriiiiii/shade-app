@@ -17,7 +17,7 @@ export default function WelcomeSlide2() {
           <Text className="text-white font-bold text-[28px]">easy</Text>
         </View>
 
-        <View className="absolute right-36 -top-12">
+        <View className="absolute right-32 -top-12">
           <CopySnipping />
         </View>
       </View>
