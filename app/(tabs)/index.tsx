@@ -1,39 +1,53 @@
-import { View, Text, Pressable } from 'react-native';
-import { router } from 'expo-router';
+import { View, Text, Pressable } from "react-native";
+import { router } from "expo-router";
+import Feather from "@expo/vector-icons/Feather";
 
+/**
+ * Page d'accueil principale de l'application (avec bottom navigation)
+ */
 export default function HomeScreen() {
-    return (
+  /**
+   * Gère la "déconnexion" de l'utilisateur
+   */
+  const handleLogout = () => {
+    router.replace("/welcome");
+  };
+
+  return (
     <View className="flex-1 items-center justify-center bg-primary p-md">
       <Text className="text-xl font-bold text-text-primary mb-xl">
         Welcome to Nativewind! INDEX
       </Text>
-      
+
       <View className="gap-md w-full max-w-xs">
-        <Pressable 
+        <Pressable
           className="bg-secondary px-lg py-md rounded-lg"
-          onPress={() => router.push('/profile')}
+          onPress={() => router.push("/profile")}
         >
           <Text className="text-text-primary font-semibold text-center">
             Profile (Sans bottom nav)
           </Text>
         </Pressable>
-        
-        <Pressable 
+
+        <Pressable
           className="bg-cards px-lg py-md rounded-lg"
-          onPress={() => router.push('/settings')}
+          onPress={() => router.push("/settings")}
         >
           <Text className="text-text-primary font-semibold text-center">
             Settings (Sans bottom nav)
           </Text>
         </Pressable>
-        
-        <Pressable 
-          className="bg-validation px-lg py-md rounded-lg"
-          onPress={() => router.push('/modal')}
+
+        <Pressable
+          className="bg-invalidation px-lg py-md rounded-lg mt-xl"
+          onPress={handleLogout}
         >
-          <Text className="text-primary font-semibold text-center">
-            Modal
-          </Text>
+          <View className="flex-row items-center justify-center gap-2">
+            <Feather name="log-out" size={20} color="#FFFFFF" />
+            <Text className="text-white font-semibold text-center">
+              Déconnexion
+            </Text>
+          </View>
         </Pressable>
       </View>
     </View>

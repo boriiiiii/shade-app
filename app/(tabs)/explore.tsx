@@ -1,5 +1,8 @@
-import { View, Text } from 'react-native';
+import { View, Text } from "react-native";
 
+/**
+ * Page Explore (onglet de navigation)
+ */
 export default function TabTwoScreen() {
   return (
     <View className="flex-1 items-center justify-center bg-white">

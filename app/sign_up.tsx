@@ -2,22 +2,48 @@ import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 
-import BackIcon from "@/assets/back-icon";
-import Coinbase from "@/assets/coinbase";
-import Metamask from "@/assets/metamask";
-import Binance from "@/assets/binance";
-import Phantom from "@/assets/phantom";
+import {
+  BackIcon,
+  Coinbase,
+  Metamask,
+  Binance,
+  Phantom,
+} from "@/components/icons";
+import { WalletButton } from "@/components/wallet-button";
+import { logger } from "@/lib/logger";
+import { LAYOUT } from "@/lib/constants";
 
+/**
+ * Page d'inscription via wallet
+ * Permet aux nouveaux utilisateurs de créer un compte en connectant leur wallet
+ */
+export default function SignUp() {
+  const router = useRouter();
 
-// TO DO 
-// REFAIRE LES PROPORTIONS => CALCUL POURCENTAGE => FIGMA THEN CODE
+  const handleGoBack = () => {
+    router.back();
+  };
 
-export default function sign_up() {
-    const router = useRouter();
-  
-    const handleGoBack = () => {
-      router.back();
-    };
+  /**
+   * Gère la connexion/création de compte via un wallet
+   * TODO: Implémenter l'intégration réelle des wallets
+   * @param walletName - Nom du wallet sélectionné
+   */
+  const handleWalletConnect = (walletName: string) => {
+    logger.info("Wallet signup initiated", { walletName });
+    
+    // TODO: Implémenter la vraie logique d'inscription ici
+    // try {
+    //   await createAccountWithWallet(walletName);
+    //   logger.info("Account created successfully", { walletName });
+    // } catch (error) {
+    //   logger.error("Account creation failed", { walletName, error });
+    //   return;
+    // }
+    
+    // Redirection vers l'app après inscription réussie
+    router.push("/(tabs)");
+  };
 
   return (
     <View className="flex-1 px-[21px] pb-[21px] pt-[60px] bg-primary">
@@ -33,7 +59,10 @@ export default function sign_up() {
               </Text>
             </View>
           </View>
-          <View className="mt-[126px] justify-center items-center">
+          <View
+            className="justify-center items-center"
+            style={{ marginTop: LAYOUT.walletListTopMargin }}
+          >
             <Text className="text-white font-satoshi text-xl">
               You don't even need an account
             </Text>
@@ -43,34 +72,28 @@ export default function sign_up() {
             <Text className="text-text-secondary font-satoshi font-light mt-[16px] mb-[40px] text-xl">
               you can connect more later
             </Text>
-            <View className="w-[85%]">
-              <TouchableOpacity className="bg-[#2A2A2A] rounded-3xl px-6 h-[60px] flex-row items-center">
-                <Coinbase width={28} height={28} />
-                <Text className="text-white font-satoshi font-medium text-xl ml-4">
-                  Coinbase
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity className="bg-[#2A2A2A] rounded-3xl px-6 h-[60px] flex-row items-center mt-[20px]">
-                <Metamask width={28} height={28} />
-                <Text className="text-white font-satoshi font-medium text-xl ml-4">
-                  Metamask
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity className="bg-[#2A2A2A] rounded-3xl px-6 h-[60px] flex-row items-center mt-[20px]">
-                <Binance width={28} height={28} />
-                <Text className="text-white font-satoshi font-medium text-xl ml-4">
-                  Binance
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity className="bg-[#2A2A2A] rounded-3xl px-6 h-[60px] flex-row items-center mt-[20px]">
-                <Phantom width={28} height={28} />
-                <Text className="text-white font-satoshi font-medium text-xl ml-4">
-                  Phantom
-                </Text>
-              </TouchableOpacity>
+            <View className="w-full items-center">
+              <WalletButton
+                name="Coinbase"
+                Icon={Coinbase}
+                onPress={() => handleWalletConnect("Coinbase")}
+                isFirst
+              />
+              <WalletButton
+                name="Metamask"
+                Icon={Metamask}
+                onPress={() => handleWalletConnect("Metamask")}
+              />
+              <WalletButton
+                name="Binance"
+                Icon={Binance}
+                onPress={() => handleWalletConnect("Binance")}
+              />
+              <WalletButton
+                name="Phantom"
+                Icon={Phantom}
+                onPress={() => handleWalletConnect("Phantom")}
+              />
             </View>
           </View>
         </View>

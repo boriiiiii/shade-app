@@ -1,5 +1,5 @@
-import * as React from "react"
-import Svg, { G, Path, Defs, ClipPath } from "react-native-svg"
+import * as React from "react";
+import Svg, { G, Path, Defs, ClipPath } from "react-native-svg";
 
 interface MetamaskProps {
   width?: number;
@@ -8,12 +8,7 @@ interface MetamaskProps {
 
 export default function Metamask({ width = 20, height = 19 }: MetamaskProps) {
   return (
-    <Svg
-      width={width}
-      height={height}
-      viewBox="0 0 20 19"
-      fill="none"
-    >
+    <Svg width={width} height={height} viewBox="0 0 20 19" fill="none">
       <G clipPath="url(#clip0_407_1347)">
         <Path
           d="M18.108 18.044l-4.02-1.197-3.032 1.812H8.941l-3.034-1.812-4.018 1.197-1.222-4.127 1.222-4.58L.667 5.467l1.222-4.8 6.279 3.752h3.661l6.28-3.751 1.222 4.799-1.223 3.872 1.223 4.58-1.223 4.126z"
@@ -51,5 +46,5 @@ export default function Metamask({ width = 20, height = 19 }: MetamaskProps) {
         </ClipPath>
       </Defs>
     </Svg>
-  )
+  );
 }

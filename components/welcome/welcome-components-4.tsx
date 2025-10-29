@@ -1,7 +1,9 @@
-import { View, Text, TouchableOpacity } from "react-native";
-import Lock from "@/assets/lock";
+import { View, Text } from "react-native";
+import { Lock } from "../icons";
 
-export default function WelcomeSlide4() {
+interface WelcomeSlide4Props {}
+
+export default function WelcomeSlide4({}: WelcomeSlide4Props) {
   return (
     <View className="flex-1">
       <View className="flex-1 justify-start mt-[15%]">
@@ -34,7 +36,9 @@ export default function WelcomeSlide4() {
       </View>
 
       <View className="items-center">
-        <Text className="text-white text-xl font-satoshi mb-[51px]">Sign up now</Text>
+        <Text className="text-white text-xl font-satoshi mb-[51px]">
+          Sign up now
+        </Text>
       </View>
     </View>
   );

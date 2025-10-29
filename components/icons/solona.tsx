@@ -1,14 +1,9 @@
-import * as React from "react"
-import Svg, { Path } from "react-native-svg"
+import * as React from "react";
+import Svg, { Path } from "react-native-svg";
 
 export default function Solana() {
   return (
-    <Svg
-      width={29}
-      height={28}
-      viewBox="0 0 29 28"
-      fill="none"
-    >
+    <Svg width={29} height={28} viewBox="0 0 29 28" fill="none">
       <Path
         fillRule="evenodd"
         clipRule="evenodd"
@@ -16,7 +11,5 @@ export default function Solana() {
         fill="#fff"
       />
     </Svg>
-  )
+  );
 }
-
-

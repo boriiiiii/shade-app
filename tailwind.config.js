@@ -24,7 +24,7 @@ module.exports = {
         normal: '400',
         medium: '500',
         bold: '700',
-        black: '900',
+        extrabold: '900',
       },
       colors: {
         primary: "var(--color-primary)",
@@ -53,6 +53,18 @@ module.exports = {
         "app-h": "var(--app-padding-horizontal)",
         "app-v": "var(--app-padding-vertical)",
         "app-top": "var(--app-padding-top)",
+      },
+      height: {
+        "wallet-btn": "60px",
+      },
+      width: {
+        "wallet-icon": "28px",
+      },
+      margin: {
+        "wallet-btn": "12px",
+      },
+      padding: {
+        "wallet-btn-h": "24px",
       },
       fontSize: {
         xs: "var(--font-size-xs)",
