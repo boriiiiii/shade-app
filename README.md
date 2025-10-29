@@ -70,16 +70,22 @@ git add .
 git commit -m "type: description claire de ce que tu as fait"
 
 # Convention de commit :
-# feat: → Nouvelle fonctionnalité
-# fix:  → Correction de bug
-# docs: → Modification de documentation
-# del:  → Suppression de code/fichier
+# feat:     → Nouvelle fonctionnalité
+# fix:      → Correction de bug
+# docs:     → Modification de documentation
+# style:    → Changement visuel (couleurs, CSS)
+# refactor: → Réorganisation du code (sans changer le comportement)
+# chore:    → Maintenance/nettoyage (supprimer fichiers inutiles)
+# test:     → Ajout de tests
+# perf:     → Amélioration de performance
 
 # Exemples de messages :
 git commit -m "feat: ajout de la page profil"
 git commit -m "fix: correction du bug de connexion wallet"
 git commit -m "docs: mise à jour du guide de contribution"
-git commit -m "del: suppression de l'ancienne page login"
+git commit -m "style: changement de la couleur principale en bleu"
+git commit -m "refactor: simplification de la logique d'authentification"
+git commit -m "chore: suppression des fichiers inutilisés"
 git commit -m "feat: ajout du bouton Phantom wallet"
 
 # Envoyer sur GitHub
