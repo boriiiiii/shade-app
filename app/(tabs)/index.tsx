@@ -21,24 +21,6 @@ export default function HomeScreen() {
 
       <View className="gap-md w-full max-w-xs">
         <Pressable
-          className="bg-secondary px-lg py-md rounded-lg"
-          onPress={() => router.push("/profile")}
-        >
-          <Text className="text-text-primary font-semibold text-center">
-            Profile (Sans bottom nav)
-          </Text>
-        </Pressable>
-
-        <Pressable
-          className="bg-cards px-lg py-md rounded-lg"
-          onPress={() => router.push("/settings")}
-        >
-          <Text className="text-text-primary font-semibold text-center">
-            Settings (Sans bottom nav)
-          </Text>
-        </Pressable>
-
-        <Pressable
           className="bg-invalidation px-lg py-md rounded-lg mt-xl"
           onPress={handleLogout}
         >
