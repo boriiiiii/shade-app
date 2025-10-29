@@ -57,3 +57,6 @@ logs/
 *.tmp
 *.temp
 .cache/
+
+expo-env.d.ts
+todo.txt
