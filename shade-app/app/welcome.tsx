@@ -86,7 +86,7 @@ export default function WelcomeScreen() {
               <View
                 key={index}
                 className={`w-2 h-2 rounded-full mx-1 ${
-                  index === currentIndex ? "bg-text-primary" : "bg-gray-400"
+                  index === currentIndex ? "bg-text-primary" : "bg-white/30"
                 }`}
               />
             ))}

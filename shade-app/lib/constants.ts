@@ -1,3 +1,7 @@
+import { Dimensions } from 'react-native';
+
+const { height: screenHeight } = Dimensions.get('window');
+
 /**
  * Constantes de l'application
  * Centralise toutes les valeurs réutilisables pour faciliter la maintenance
@@ -7,8 +11,8 @@
  * Dimensions et espacements pour les layouts
  */
 export const LAYOUT = {
-  /** Marge supérieure de la liste de wallets */
-  walletListTopMargin: 126,
+  /** Marge supérieure de la liste de wallets (~126px sur iPhone 16) */
+  walletListTopMargin: screenHeight * 0.148,
   /** Largeur du conteneur de wallets en pourcentage */
   walletContainerWidth: '85%',
   /** Padding horizontal des écrans principaux */
@@ -17,9 +21,9 @@ export const LAYOUT = {
   screenPaddingVertical: 21,
   /** Padding top des écrans principaux */
   screenPaddingTop: 60,
-  /** Marge inférieure des boutons d'action */
-  actionButtonsBottom: 62,
-} as const;
+  /** Marge inférieure des boutons d'action (~62px sur iPhone 16) */
+  actionButtonsBottom: screenHeight * 0.073,
+};
 
 /**
  * Configuration des boutons de wallets
