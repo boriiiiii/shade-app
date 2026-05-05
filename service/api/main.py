@@ -4,9 +4,12 @@ from pydantic import BaseModel
 from supabase import create_client, Client
 import os
 
+from sniping.router import router as sniping_router
+
 load_dotenv()
 
 app = FastAPI()
+app.include_router(sniping_router)
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
