@@ -3,6 +3,8 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from supabase import create_client, Client
 import os
+import asyncio
+import httpx
 import requests as req
 
 from sniping.router import router as sniping_router
@@ -34,18 +36,29 @@ SOL_RPCS = [
 RPC_HEADERS = {"Content-Type": "application/json"}
 
 
-def solana_rpc(method: str, params: list):
-    """Call a Solana JSON-RPC method with automatic RPC fallback."""
+async def solana_rpc(method: str, params: list):
+    """Call all Solana RPCs in parallel, return first successful result."""
     payload = {"jsonrpc": "2.0", "id": 1, "method": method, "params": params}
-    for rpc in SOL_RPCS:
-        try:
-            res = req.post(rpc, json=payload, headers=RPC_HEADERS, timeout=15)
-            if res.status_code == 200:
-                data = res.json()
-                if "result" in data and data["result"] is not None:
-                    return data["result"]
-        except Exception:
-            continue
+
+    async def try_rpc(client: httpx.AsyncClient, url: str):
+        res = await client.post(url, json=payload, headers=RPC_HEADERS)
+        data = res.json()
+        if res.status_code == 200 and "result" in data and data["result"] is not None:
+            return data["result"]
+        return None
+
+    async with httpx.AsyncClient(timeout=8.0) as client:
+        tasks = [asyncio.create_task(try_rpc(client, rpc)) for rpc in SOL_RPCS]
+        for coro in asyncio.as_completed(tasks):
+            try:
+                result = await coro
+                if result is not None:
+                    for t in tasks:
+                        t.cancel()
+                    return result
+            except Exception:
+                continue
+
     raise HTTPException(status_code=502, detail="All Solana RPCs failed")
 
 
@@ -153,16 +166,16 @@ def get_swap_transaction(request: SwapTransactionRequest):
 
 
 @app.get("/solana/signatures/{address}")
-def get_solana_signatures(address: str, limit: int = 20):
+async def get_solana_signatures(address: str, limit: int = 20):
     """Proxy getSignaturesForAddress — avoids mobile RPC rate limits."""
-    result = solana_rpc("getSignaturesForAddress", [address, {"limit": limit}])
+    result = await solana_rpc("getSignaturesForAddress", [address, {"limit": limit}])
     return {"signatures": result}
 
 
 @app.get("/solana/transaction/{signature}")
-def get_solana_transaction(signature: str):
+async def get_solana_transaction(signature: str):
     """Proxy getParsedTransaction — avoids mobile RPC rate limits."""
-    result = solana_rpc(
+    result = await solana_rpc(
         "getParsedTransaction",
         [signature, {"encoding": "jsonParsed", "maxSupportedTransactionVersion": 0}],
     )
