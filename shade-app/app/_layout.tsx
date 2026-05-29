@@ -1,3 +1,15 @@
+import { Buffer } from 'buffer';
+import { BackHandler } from 'react-native';
+import 'react-native-get-random-values';
+import 'react-native-url-polyfill/auto';
+import 'text-encoding';
+global.Buffer = Buffer;
+
+// Polyfill for deprecated BackHandler.removeEventListener
+if (BackHandler && !(BackHandler as any).removeEventListener) {
+  (BackHandler as any).removeEventListener = () => { };
+}
+
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { View } from "react-native";
@@ -6,6 +18,26 @@ import "../global.css";
 import { useFonts } from "expo-font";
 import { useEffect } from "react";
 import * as SplashScreen from "expo-splash-screen";
+import { WalletConnectModal } from '@walletconnect/modal-react-native';
+import { WalletProvider } from "@/lib/wallet-store";
+
+// Empêche le splash screen de se cacher automatiquement
+SplashScreen.preventAutoHideAsync().catch(() => {
+  // Ignore l'erreur si le splash screen n'est pas disponible
+});
+
+const projectId = process.env.EXPO_PUBLIC_WALLET_CONNECT_PROJECT_ID || '4f9c7116394cce52212c2ebc23a131ab';
+
+const providerMetadata = {
+  name: 'Shade',
+  description: 'Shade - Your Crypto Side Wallet App',
+  url: 'https://shade.app',
+  icons: ['https://shade.app/icon.png'],
+  redirect: {
+    native: 'shadeapp://',
+    universal: 'https://shade.app'
+  }
+};
 
 /**
  * Layout racine de l'application
@@ -29,7 +61,9 @@ export default function RootLayout() {
   // Cache le splash screen une fois les polices chargées
   useEffect(() => {
     if (loaded) {
-      SplashScreen.hideAsync();
+      SplashScreen.hideAsync().catch(() => {
+        // Ignore l'erreur si le splash screen n'est pas disponible
+      });
     }
   }, [loaded]);
 
@@ -40,21 +74,24 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <View className="flex-1 bg-primary">
-        <Stack
-          initialRouteName="welcome"
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: "#121418" },
-          }}
-        >
-          <Stack.Screen name="welcome" />
-          <Stack.Screen name="login" />
-          <Stack.Screen name="sign_up" />
-          <Stack.Screen name="(tabs)" />
-        </Stack>
-        <StatusBar style="light" />
-      </View>
+      <WalletProvider>
+        <View className="flex-1 bg-primary">
+          <Stack
+            initialRouteName="welcome"
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: "#121418" },
+            }}
+          >
+            <Stack.Screen name="welcome" />
+            <Stack.Screen name="login" />
+            <Stack.Screen name="sign_up" />
+            <Stack.Screen name="(tabs)" />
+          </Stack>
+          <StatusBar style="light" />
+        </View>
+        <WalletConnectModal projectId={projectId} providerMetadata={providerMetadata} />
+      </WalletProvider>
     </SafeAreaProvider>
   );
 }

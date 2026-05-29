@@ -1,30 +1,59 @@
 import { Tabs } from "expo-router";
 import React from "react";
+import Feather from "@expo/vector-icons/Feather";
 
-/**
- * Layout pour la navigation avec la navbar
- * Configure les onglets Home et Explore
- */
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        // tabBarButton: HapticTab,
+        tabBarStyle: {
+          backgroundColor: "#121418",
+          borderTopColor: "#2A2A2A",
+          borderTopWidth: 1,
+        },
+        tabBarActiveTintColor: "#6283FA",
+        tabBarInactiveTintColor: "#6B6B6B",
+        tabBarLabelStyle: {
+          fontFamily: "Satoshi",
+          fontSize: 12,
+        },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: "Home",
-          // tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          title: "Portfolio",
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="pie-chart" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="snipe"
+        options={{
+          title: "Snipe",
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="zap" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="copytrading"
+        options={{
+          title: "Copy",
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="copy" size={size} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="explore"
         options={{
           title: "Explore",
-          // tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="compass" size={size} color={color} />
+          ),
         }}
       />
     </Tabs>

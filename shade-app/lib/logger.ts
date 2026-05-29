@@ -36,7 +36,9 @@ class Logger {
    * @param error - Objet d'erreur optionnel
    */
   error(message: string, error?: any) {
-    console.error(`[ERROR] ${message}`, error || '');
+    const detail = error?.error?.message ?? error?.message ?? (typeof error === 'string' ? error : null);
+    const output = detail ? `${message}\n${detail}` : message;
+    console.error(output);
   }
 }
 

@@ -52,9 +52,9 @@ export default function Login() {
         try {
           const data = handlePhantomRedirect(event.url, dappKeyPair);
           logger.info('Phantom data decrypted:', { success: !!data });
-          if (data?.publicKey) {
+          if (data?.publicKey && dappKeyPair) {
             logger.info("Phantom connected successfully", { address: data.publicKey });
-            savePhantomConnection(data.publicKey, data.session);
+            savePhantomConnection(data.publicKey, data.session, data.sharedSecret, dappKeyPair.publicKey);
             router.replace("/(tabs)");
           }
         } catch (e) {
