@@ -47,7 +47,7 @@ async def solana_rpc(method: str, params: list):
             return data["result"]
         return None
 
-    async with httpx.AsyncClient(timeout=8.0) as client:
+    async with httpx.AsyncClient(timeout=8.0, verify=False) as client:
         tasks = [asyncio.create_task(try_rpc(client, rpc)) for rpc in SOL_RPCS]
         for coro in asyncio.as_completed(tasks):
             try:
@@ -176,7 +176,7 @@ async def get_solana_signatures(address: str, limit: int = 20):
 async def get_solana_transaction(signature: str):
     """Proxy getParsedTransaction — avoids mobile RPC rate limits."""
     result = await solana_rpc(
-        "getParsedTransaction",
+        "getTransaction",
         [signature, {"encoding": "jsonParsed", "maxSupportedTransactionVersion": 0}],
     )
     return {"transaction": result}
