@@ -1,15 +1,27 @@
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from supabase import create_client, Client
 import os
 
 from sniping.router import router as sniping_router
+from news.router import router as news_router
 
 load_dotenv()
 
 app = FastAPI()
+
+# CORS — permet à l'app Expo (web) d'appeler l'API en développement.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(sniping_router)
+app.include_router(news_router)
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")

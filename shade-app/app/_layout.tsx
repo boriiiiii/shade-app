@@ -1,15 +1,47 @@
+// Polyfill d'entropie : fournit crypto.getRandomValues sur React Native,
+// requis par tweetnacl (génération de clés Phantom). À garder en tout premier.
+import "react-native-get-random-values";
+
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { View } from "react-native";
+import { View, LogBox } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { WalletConnectModal } from "@walletconnect/modal-react-native";
 import "../global.css";
 import { useFonts } from "expo-font";
 import { useEffect } from "react";
 import * as SplashScreen from "expo-splash-screen";
+import { WalletProvider } from "@/lib/wallet-store";
+import { logger } from "@/lib/logger";
+
+/** Identifiant de projet WalletConnect (cloud.walletconnect.com). */
+const WALLETCONNECT_PROJECT_ID =
+  process.env.EXPO_PUBLIC_WALLETCONNECT_PROJECT_ID || "";
+
+// WalletConnect embarque des modules natifs absents d'Expo Go : ces logs sont
+// inoffensifs (le wallet EVM sera finalisé via un build natif). On les masque
+// pour garder la console propre, notamment en démo.
+LogBox.ignoreLogs([
+  "react-native-compat",
+  "projectId not found",
+  "Application module is not available",
+]);
+
+/** Métadonnées présentées aux wallets lors d'une connexion WalletConnect. */
+const providerMetadata = {
+  name: "Shade",
+  description: "Copy trading & sniping sur Solana",
+  url: "https://shade.app",
+  icons: ["https://shade.app/icon.png"],
+  redirect: {
+    native: "shadeapp://",
+    universal: "https://shade.app",
+  },
+};
 
 /**
  * Layout racine de l'application
- * Gère le chargement des polices et la configuration globale de la navigation
+ * Gère le chargement des polices, le contexte wallet et la navigation globale.
  */
 export default function RootLayout() {
   // Chargement des différentes variantes de la police Satoshi
@@ -33,6 +65,15 @@ export default function RootLayout() {
     }
   }, [loaded]);
 
+  // Avertit si la connexion WalletConnect n'est pas configurée
+  useEffect(() => {
+    if (!WALLETCONNECT_PROJECT_ID) {
+      logger.warn(
+        "EXPO_PUBLIC_WALLETCONNECT_PROJECT_ID manquant : la connexion EVM (WalletConnect) restera indisponible."
+      );
+    }
+  }, []);
+
   // Affiche rien tant que les polices ne sont pas chargées
   if (!loaded) {
     return null;
@@ -40,21 +81,29 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <View className="flex-1 bg-primary">
-        <Stack
-          initialRouteName="welcome"
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: "#121418" },
-          }}
-        >
-          <Stack.Screen name="welcome" />
-          <Stack.Screen name="login" />
-          <Stack.Screen name="sign_up" />
-          <Stack.Screen name="(tabs)" />
-        </Stack>
-        <StatusBar style="light" />
-      </View>
+      <WalletProvider>
+        <View className="flex-1 bg-primary">
+          <Stack
+            initialRouteName="welcome"
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: "#121418" },
+            }}
+          >
+            <Stack.Screen name="welcome" />
+            <Stack.Screen name="login" />
+            <Stack.Screen name="sign_up" />
+            <Stack.Screen name="(tabs)" />
+          </Stack>
+          <StatusBar style="light" />
+        </View>
+        {WALLETCONNECT_PROJECT_ID ? (
+          <WalletConnectModal
+            projectId={WALLETCONNECT_PROJECT_ID}
+            providerMetadata={providerMetadata}
+          />
+        ) : null}
+      </WalletProvider>
     </SafeAreaProvider>
   );
 }
