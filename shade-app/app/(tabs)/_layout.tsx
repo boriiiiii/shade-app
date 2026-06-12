@@ -2,6 +2,10 @@ import { Tabs } from "expo-router";
 import React from "react";
 import Feather from "@expo/vector-icons/Feather";
 
+/**
+ * Tab bar de l'app : six onglets (Portfolio, Snipe, Copy, Learn, News,
+ * Explore). Couleurs alignées sur la palette `bg-primary`.
+ */
 export default function TabLayout() {
   return (
     <Tabs
@@ -44,6 +48,24 @@ export default function TabLayout() {
           title: "Copy",
           tabBarIcon: ({ color, size }) => (
             <Feather name="copy" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="learn"
+        options={{
+          title: "Learn",
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="book-open" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="news"
+        options={{
+          title: "News",
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="rss" size={size} color={color} />
           ),
         }}
       />

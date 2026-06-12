@@ -3,13 +3,15 @@ module.exports = function (api) {
   return {
     presets: [
       [
-        "babel-preset-expo", 
-        { 
+        "babel-preset-expo",
+        {
           jsxImportSource: "nativewind",
-          unstable_transformImportMeta: true 
-        }
+          // Requis car valtio (dépendance de WalletConnect) utilise `import.meta`,
+          // non supporté nativement par Hermes (moteur JS de React Native).
+          unstable_transformImportMeta: true,
+        },
       ],
-      "nativewind/babel"
+      "nativewind/babel",
     ],
   };
 };
