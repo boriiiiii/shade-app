@@ -1,47 +1,66 @@
-import { Buffer } from 'buffer';
-import { BackHandler } from 'react-native';
-import 'react-native-get-random-values';
-import 'react-native-url-polyfill/auto';
-import 'text-encoding';
+// Polyfill d'entropie : fournit crypto.getRandomValues sur React Native,
+// requis par tweetnacl (génération de clés Phantom). À garder en tout premier.
+import "react-native-get-random-values";
+import "react-native-url-polyfill/auto";
+import "text-encoding";
+import { Buffer } from "buffer";
+import { BackHandler } from "react-native";
 global.Buffer = Buffer;
 
-// Polyfill for deprecated BackHandler.removeEventListener
+// Polyfill pour BackHandler.removeEventListener (déprécié dans RN ≥ 0.74).
 if (BackHandler && !(BackHandler as any).removeEventListener) {
-  (BackHandler as any).removeEventListener = () => { };
+  (BackHandler as any).removeEventListener = () => {};
 }
 
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { View } from "react-native";
+import { View, LogBox } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { WalletConnectModal } from "@walletconnect/modal-react-native";
 import "../global.css";
 import { useFonts } from "expo-font";
 import { useEffect } from "react";
 import * as SplashScreen from "expo-splash-screen";
-import { WalletConnectModal } from '@walletconnect/modal-react-native';
 import { WalletProvider } from "@/lib/wallet-store";
+import { logger } from "@/lib/logger";
 
-// Empêche le splash screen de se cacher automatiquement
-SplashScreen.preventAutoHideAsync().catch(() => {
-  // Ignore l'erreur si le splash screen n'est pas disponible
-});
+/**
+ * Identifiant de projet WalletConnect (cloud.walletconnect.com / reown).
+ * `EXPO_PUBLIC_REOWN_PROJECT_ID` est conservé en fallback pour ne pas casser
+ * les .env existants.
+ */
+const WALLETCONNECT_PROJECT_ID =
+  process.env.EXPO_PUBLIC_WALLETCONNECT_PROJECT_ID ||
+  process.env.EXPO_PUBLIC_REOWN_PROJECT_ID ||
+  "";
 
-const projectId = process.env.EXPO_PUBLIC_WALLET_CONNECT_PROJECT_ID || '4f9c7116394cce52212c2ebc23a131ab';
+// WalletConnect embarque des modules natifs absents d'Expo Go : ces logs sont
+// inoffensifs (le wallet EVM sera finalisé via un build natif). On les masque
+// pour garder la console propre, notamment en démo.
+LogBox.ignoreLogs([
+  "react-native-compat",
+  "projectId not found",
+  "Application module is not available",
+]);
 
+/** Métadonnées présentées aux wallets lors d'une connexion WalletConnect. */
 const providerMetadata = {
-  name: 'Shade',
-  description: 'Shade - Your Crypto Side Wallet App',
-  url: 'https://shade.app',
-  icons: ['https://shade.app/icon.png'],
+  name: "Shade",
+  description: "Copy trading & sniping sur Solana",
+  url: "https://shade.app",
+  icons: ["https://shade.app/icon.png"],
   redirect: {
-    native: 'shadeapp://',
-    universal: 'https://shade.app'
-  }
+    native: "shadeapp://",
+    universal: "https://shade.app",
+  },
 };
+
+// Empêche le splash screen de se cacher automatiquement.
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 /**
  * Layout racine de l'application
- * Gère le chargement des polices et la configuration globale de la navigation
+ * Gère le chargement des polices, le contexte wallet et la navigation globale.
  */
 export default function RootLayout() {
   // Chargement des différentes variantes de la police Satoshi
@@ -61,11 +80,18 @@ export default function RootLayout() {
   // Cache le splash screen une fois les polices chargées
   useEffect(() => {
     if (loaded) {
-      SplashScreen.hideAsync().catch(() => {
-        // Ignore l'erreur si le splash screen n'est pas disponible
-      });
+      SplashScreen.hideAsync().catch(() => {});
     }
   }, [loaded]);
+
+  // Avertit si la connexion WalletConnect n'est pas configurée
+  useEffect(() => {
+    if (!WALLETCONNECT_PROJECT_ID) {
+      logger.warn(
+        "EXPO_PUBLIC_WALLETCONNECT_PROJECT_ID manquant : la connexion EVM (WalletConnect) restera indisponible."
+      );
+    }
+  }, []);
 
   // Affiche rien tant que les polices ne sont pas chargées
   if (!loaded) {
@@ -90,7 +116,12 @@ export default function RootLayout() {
           </Stack>
           <StatusBar style="light" />
         </View>
-        <WalletConnectModal projectId={projectId} providerMetadata={providerMetadata} />
+        {WALLETCONNECT_PROJECT_ID ? (
+          <WalletConnectModal
+            projectId={WALLETCONNECT_PROJECT_ID}
+            providerMetadata={providerMetadata}
+          />
+        ) : null}
       </WalletProvider>
     </SafeAreaProvider>
   );

@@ -62,3 +62,6 @@ expo-env.d.ts
 todo.txt
 
 CLAUDE.md
+
+# Expo generated artefacts — regenerated on every `expo start` / `expo lint`.
+shade-app/.expo/
