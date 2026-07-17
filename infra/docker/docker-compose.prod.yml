@@ -1,0 +1,46 @@
+# Prod — image taggée (poussée par la CI), secrets injectés par l'orchestrateur.
+#   docker compose -f infra/docker/docker-compose.prod.yml --env-file .env.prod up -d
+#
+# NB : en prod réelle, externalisez PostgreSQL (managé + backups/PITR) ou ajoutez réplication et
+# stratégie de sauvegarde ; ce fichier reste un point de départ auto-hébergé.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata_prod:/var/lib/postgresql/data
+    expose:
+      - "5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  api:
+    image: ${API_IMAGE:-shade-api:latest}
+    restart: always
+    env_file:
+      - ../../.env.prod
+    environment:
+      ENV: prod
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # En prod, migrations découplées idéalement (job dédié) ; ici en ligne pour rester simple.
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4"
+
+volumes:
+  pgdata_prod:
+    driver: local
