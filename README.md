@@ -1,180 +1,167 @@
-# Shade — MVP (Solana devnet)
+# SHADE — bot Solana *copytrade + sniping*, non-custodial, piloté depuis un shell
 
-Application mobile **non-custodial** de trading automatisé sur Solana, combinant **copy trading** et
-**sniping**. L'utilisateur connecte son wallet, **ne cède jamais sa clé privée**, et délègue une
-autorisation *limitée et révocable* au backend, qui exécute des trades en son nom dans des bornes
-strictes (budget, durée, slippage max, whitelist).
+Projet **étudiant / démo**. Une app React Native (Expo, SDK 54) façon **terminal
+Unix** (fond noir, monospace vert phosphore/ambre, curseur clignotant, logs live)
+qui pilote un **backend Node.js** de **copytrade** et **sniping** sur Solana via
+l'agrégateur **Jupiter**.
 
-> Projet étudiant Epitech (EDP). Objectif de cette itération : un MVP **réellement fonctionnel sur
-> devnet** — vrais wallets, vraies transactions signées, vrai backend. Pas de données mockées.
+> 🔐 **100% non-custodial.** Le backend **ne détient aucune clé**. Il détecte des
+> opportunités et **construit des transactions non signées** pour ton wallet
+> **Phantom** connecté. **Chaque transaction est signée et envoyée par toi dans
+> Phantom** (`signAndSendTransaction`). Les moteurs mettent les ordres en file
+> d'attente ; tu **approuves chaque ordre** un par un.
 
-## Sommaire
-
-- [Architecture](#architecture)
-- [Modèle de confiance non-custodial](#modèle-de-confiance-non-custodial)
-- [Les 3 modes d'exécution](#les-3-modes-dexécution)
-- [Démarrage rapide](#démarrage-rapide)
-- [Structure du repo](#structure-du-repo)
-- [API](#api-principaux-endpoints)
-- [Tests](#tests)
-- [Décisions d'architecture](#décisions-darchitecture)
-- [Sécurité](#sécurité--règles-non-négociables)
+---
 
 ## Architecture
 
 ```
-┌────────────────────┐        ┌──────────────────────────┐        ┌─────────────────────┐
-│  App mobile (Expo) │  HTTPS │   Backend FastAPI        │  RPC   │  Solana devnet      │
-│  React Native      │◀──────▶│   (auth, orders, modes)  │◀──────▶│  spl-token program  │
-│  NativeWind        │  JWT   │   PostgreSQL (SQLAlchemy)│        │  System program     │
-└─────────┬──────────┘        └───────────┬──────────────┘        └─────────────────────┘
-          │                               │
-          │ signMessage / signTransaction │ side wallet (délégataire)
-          ▼                               ▼  ne peut dépenser QUE le montant approuvé
-   Wallet utilisateur              Clé privée du side wallet
-   (Phantom / MWA)                 (seule clé détenue par Shade)
-   → SEUL détenteur de la
-     clé privée de l'utilisateur
+shade-claude/
+├── backend/                 # API REST + WebSocket + moteurs (Node.js + TypeScript)
+│   ├── src/
+│   │   ├── index.ts         # serveur Express + WebSocket (point d'entrée)
+│   │   ├── config.ts        # lecture .env (réseau, RPC, plafonds)
+│   │   ├── routes.ts        # routes REST /api/* (wallet, moteurs, ordres)
+│   │   ├── orders.ts        # cycle de vie des ordres (create → build → sent → confirm)
+│   │   ├── ws.ts            # hub WebSocket (rediffuse logs/état/ordres)
+│   │   ├── state.ts         # état global en mémoire (pas de DB)
+│   │   ├── solana/
+│   │   │   ├── connection.ts# connexion RPC + liens Explorer
+│   │   │   ├── wallet.ts    # lecture de solde (AUCUNE clé détenue)
+│   │   │   └── jupiter.ts   # quote + construction de tx NON signée + confirmation
+│   │   └── engines/
+│   │       ├── copytrade.ts # surveille des adresses cibles → crée des ordres
+│   │       ├── sniping.ts   # surveille les programmes DEX → crée des ordres
+│   │       └── feeder.ts    # (démo) génère de faux événements pour tester le flux
+│   └── .env.example
+│
+├── mobile/                  # App React Native (Expo SDK 54) — interface terminal
+│   ├── App.tsx              # onglets + câblage deep links Phantom (connect + sign)
+│   └── src/
+│       ├── api.ts           # client REST
+│       ├── useBotSocket.ts  # hook WebSocket (logs, état, ordres en temps réel)
+│       ├── commands.ts      # parseur de commandes (le "shell")
+│       ├── wallet/
+│       │   ├── phantom.ts   # connexion + signAndSendTransaction (deep links chiffrés)
+│       │   └── session.ts   # persistance locale (wallet + session Phantom)
+│       ├── panels/          # DashPanel, CopyPanel, SnipePanel, OrdersPanel
+│       └── components/       # StatusHeader, TabBar, LogView, CommandBar, ui, Cursor
+│
+└── package.json            # lance backend + mobile ensemble
 ```
 
-- **Frontend** : React Native + Expo + NativeWind (`apps/mobile`)
-- **Backend** : Python **FastAPI**, SQLAlchemy **async** + Alembic (`services/api`)
-- **DB** : PostgreSQL 16 auto-hébergé (conteneur officiel, orchestré via **OrbStack**)
-- **Blockchain** : Solana **devnet** — `@solana/web3.js` (client), `solders` / `solana-py` (backend)
-- **Délégation** : SPL Token `Approve`/`Revoke` (voir [ADR 0001](docs/architecture-decisions/0001-delegation-mechanism.md))
+**Flux d'un trade**
 
-## Modèle de confiance non-custodial
+```
+ détection (backend)         approbation (app)              signature (Phantom)
+ ─────────────────────  ►  ────────────────────────  ►  ──────────────────────
+ engine crée un ORDER       tu tapes APPROVE →            Phantom signe + envoie
+ (pending, sans tx)         backend build la tx Jupiter    → signature renvoyée
+                            pour ton wallet                → app la rapporte au
+                            → l'app ouvre Phantom            backend qui confirme
+```
 
-1. **Délégation** — l'utilisateur signe une instruction SPL `Approve` **dans son wallet** :
-   il autorise le *side wallet* du backend à dépenser un **montant précis** d'un **token précis**.
-   Jamais la clé privée, jamais un montant illimité.
-2. **Révocation** — instruction SPL `Revoke` signée par l'utilisateur, **on-chain**, qui coupe
-   l'accès immédiatement, sans dépendre du backend.
-3. **Isolation** — le side wallet ne peut toucher **que** le compte de token approuvé, **que** dans
-   la limite du montant approuvé. Le SOL natif et tous les autres fonds restent hors de portée.
-4. **Défense en profondeur** — à **chaque** exécution (pas seulement à l'approbation), le backend
-   re-vérifie statut/durée/budget résiduel/slippage/whitelist/chaîne, **reconstruit** la transaction
-   côté serveur, et journalise chaque tentative (`AuditLog`) avec sa raison d'acceptation/rejet.
+- Le **frontend** est un shell : chaque commande/bouton appelle une route REST.
+- Le **backend** détecte (`onLogs`) et **construit** des tx non signées. Il ne
+  signe rien. Tout est poussé en direct sur le WebSocket → l'app affiche le flux.
 
-## Les 3 modes d'exécution
+---
 
-| Mode | Signature | Exécution | Usage |
-|------|-----------|-----------|-------|
-| **A. Manuel** | Utilisateur signe **chaque** trade dans son wallet | L'utilisateur, via deep link | Copy trading gros volumes / faible volatilité, zéro confiance backend |
-| **B. Degen** | 1 `Approve` initial (durée + budget) | Side wallet, tant que `now < expires_at` **et** `spent < budget` | Session temporaire (ex : 2h / 5 SOL) |
-| **C. Full Trust** | 1 `Approve` budget dédié | Side wallet 24/7 sur événement on-chain | Sniping, latence quasi nulle |
+## Décisions clés
 
-Détails du flux Order (build → validate → ready-to-sign → sign → broadcast → track) :
-voir [`docs/architecture-decisions/0001`](docs/architecture-decisions/0001-delegation-mechanism.md)
-et `services/api/app/orders/`.
+- **Non-custodial** : trading depuis **ton wallet Phantom connecté**. Aucune clé
+  côté serveur. Chaque tx est signée à la main dans Phantom.
+- **Chaque ordre est confirmé** : détections copytrade/snipe → file d'ordres →
+  tu approuves & signes un par un (onglet **ORDERS**).
+- **Exécution réelle** via **Jupiter** (`/quote` puis `/swap` avec `userPublicKey`
+  = ton wallet) sur mainnet.
+- **Demo feeder** : `demo on` génère des détections synthétiques sur des tokens
+  liquides (BONK/JUP/WIF) → des ordres réels que tu peux approuver.
 
-## Démarrage rapide
+---
 
-### Prérequis
-- **OrbStack** (ou Docker) pour Postgres + l'API
-- **Node ≥ 18** + `npm` pour l'app Expo
-- Python 3.12 (uniquement si tu veux lancer l'API hors Docker)
+## Prérequis
 
-### 1. Backend + base de données (Docker / OrbStack)
+- **Node.js 18+** (testé sur Node 22).
+- **Expo Go** (SDK 54) sur ton téléphone — nécessaire pour signer via Phantom.
+- **Phantom** installé sur le téléphone.
+- Idéalement une clé **RPC rapide** (Helius/QuickNode) pour le sniping.
+
+---
+
+## Installation
 
 ```bash
-cp .env.example .env
-# Renseigne JWT_SECRET et SIDE_WALLET_SECRET_KEY (voir ci-dessous)
-python services/api/scripts/gen_side_wallet.py   # génère une paire devnet + l'airdrop
-# → copie la clé affichée dans SIDE_WALLET_SECRET_KEY du .env
-
-docker compose up --build
-# API   → http://localhost:8000   (Swagger : http://localhost:8000/docs)
-# Health → http://localhost:8000/health
+npm install                 # deps racine (concurrently)
+npm run install:all         # installe backend/ et mobile/
+cp backend/.env.example backend/.env
 ```
 
-Le service `api` attend que Postgres soit *healthy*, applique les migrations Alembic
-(`alembic upgrade head`), puis lance uvicorn avec hot-reload.
+---
 
-### 2. App mobile (Expo)
+## Lancer
 
 ```bash
-cd apps/mobile
-npm install
-cp .env.example .env       # EXPO_PUBLIC_API_URL=http://<ton-ip-locale>:8000
-npm run start              # puis 'i' (iOS), 'a' (Android) ou QR code Expo Go
+npm run dev      # backend + bundler Expo en parallèle
+# ou séparément :
+npm run backend  # http://localhost:8000 (+ ws://localhost:8000/ws)
+npm run mobile   # ouvre Expo — scanne le QR avec Expo Go
 ```
 
-> Pour tester le flux non-custodial de bout en bout sans téléphone physique + Phantom, l'app expose
-> un **dev signer** devnet (clé locale de test, `EXPO_PUBLIC_DEV_SIGNER=true`, **`__DEV__` only**,
-> jamais en prod). Le chemin de production utilise Phantom (deep link) / Mobile Wallet Adapter.
-
-## Structure du repo
-
-```
-shade/
-├── apps/
-│   └── mobile/               # Expo app (React Native + NativeWind)
-├── services/
-│   └── api/                  # FastAPI backend
-│       ├── app/
-│       │   ├── auth/         # nonce, vérification signature, JWT
-│       │   ├── orders/       # build / validate / ready-to-sign / track
-│       │   ├── copytrade/    # sélection trader + config copie
-│       │   ├── sniping/      # bot snipe + détection d'événement
-│       │   ├── wallet/       # délégation SPL (side wallet)
-│       │   ├── solana/       # client RPC + crypto Ed25519
-│       │   ├── db/           # modèles SQLAlchemy, session
-│       │   └── core/         # config, sécurité
-│       ├── alembic/          # migrations
-│       └── tests/
-├── infra/
-│   └── docker/               # variantes compose staging/prod
-├── docs/
-│   └── architecture-decisions/
-└── README.md
-```
-
-## API (principaux endpoints)
-
-| Méthode | Route | Description |
-|---------|-------|-------------|
-| `POST` | `/auth/nonce` | Émet un nonce à signer (usage unique, TTL court) |
-| `POST` | `/auth/verify` | Vérifie la signature Ed25519 ↔ adresse, renvoie un JWT |
-| `GET`  | `/auth/me` | Profil de la session courante |
-| `POST` | `/wallet/delegations/prepare` | Construit la tx `Approve` (à signer côté wallet) |
-| `POST` | `/wallet/delegations/confirm` | Enregistre la délégation après broadcast |
-| `POST` | `/wallet/delegations/{id}/revoke` | Construit la tx `Revoke` |
-| `POST` | `/orders/prepare` | Valide + construit un ordre « ready to sign » |
-| `POST` | `/orders/{id}/submit` | (Manuel) broadcast la tx signée par l'utilisateur |
-| `POST` | `/orders/{id}/execute` | (Degen/Full Trust) exécution par le side wallet, dans les limites |
-| `GET`  | `/orders/{id}` | Statut on-chain (pending/success/failed) |
-| `GET`  | `/orders` | Historique + PnL agrégé |
-| `POST` | `/copytrade/configs` | Crée/MAJ une config de copy trading |
-| `POST` | `/sniping/configs` | Crée/MAJ une config de sniping |
-| `POST` | `/sniping/events` | (Simulé devnet) événement « nouveau token » → déclenche l'exécution |
-
-Documentation interactive complète : **`/docs`** (Swagger) une fois l'API lancée.
-
-## Tests
-
+**Connexion app ↔ backend** : l'URL du backend est **auto-détectée** depuis l'IP
+du serveur Metro (donc pas de `localhost` sur téléphone physique). Pour forcer :
 ```bash
-cd services/api
-pip install -r requirements-dev.txt
-pytest -q
+EXPO_PUBLIC_API_URL=http://192.168.1.42:8000 npm run mobile
 ```
+> Le backend **doit tourner** pour construire les tx et voir les soldes.
 
-Couverture minimale exigée par le cahier des charges :
-- vérification de signature Ed25519 (`tests/test_auth_signature.py`)
-- validation d'ordre **côté serveur** (`tests/test_order_validation.py`)
-- respect des limites **budget / durée** en Mode Degen (`tests/test_degen_limits.py`)
+---
 
-## Décisions d'architecture
-- [ADR 0001 — Mécanisme de délégation non-custodial](docs/architecture-decisions/0001-delegation-mechanism.md)
-- [Diagrammes de flux — Login & Order](docs/flows.md)
+## Utiliser (démo de bout en bout)
 
-## Sécurité — règles non négociables
-- Aucune clé privée utilisateur ne transite ni n'est stockée côté Shade, **jamais**.
-- Le nonce de login est **usage unique** + **expiration courte** (anti-rejeu).
-- **Toute** transaction est reconstruite et validée côté backend (montant, route, slippage max,
-  whitelist token/DEX, chaîne) avant d'être proposée à la signature.
-- Budget et durée du side wallet sont vérifiés **à chaque exécution**, pas seulement à l'approbation.
-- **Audit log** sur chaque tentative (acceptée ou rejetée), avec la raison.
+1. Onglet **DASH** → **CONNECT PHANTOM** → approuve dans Phantom. Ton adresse +
+   solde s'affichent (connexion persistée, indépendante du backend).
+2. Onglet **SNIPE** (ou **COPY**) → règle le montant → **START**.
+3. **DASH → DEMO FEED** (ou `demo snipe` dans l'onglet TERM) pour générer une
+   détection tout de suite.
+4. Onglet **ORDERS** → un ordre `AWAITING APPROVAL` apparaît → **APPROVE & SIGN**
+   → Phantom s'ouvre → tu signes → l'ordre passe `SENT` puis `CONFIRMED` avec un
+   lien **Solana Explorer**.
 
-## Licence
-Open-source-ready : pas de secret en dur, `.env` propre. À compléter selon la politique EDP.
+Shell (onglet **TERM**) : `help`, `connect`, `copy start`, `snipe amount 0.01`,
+`buy <mint> 0.01`, `orders`, `demo on`…
+
+---
+
+## Garde-fous (`backend/.env`)
+
+| Variable | Rôle | Défaut |
+|---|---|---|
+| `MAX_TRADE_SOL` | plafond par ordre | `0.05` |
+| `MAX_SLIPPAGE_BPS` | slippage max | `1500` (15%) |
+| `SOLANA_NETWORK` | `mainnet-beta` \| `devnet` | `mainnet-beta` |
+| `HELIUS_API_KEY` | RPC/WS rapides (dérivés auto) | — |
+| `DEMO_FEED` | démarre le feeder au boot | `false` |
+
+Comme **tu signes chaque tx**, aucun trade ne part sans ton approbation explicite.
+
+---
+
+## Limites assumées (démo)
+
+- Détection **heuristique** (deltas de soldes de tokens, marqueurs de logs) — pas
+  de décodage exhaustif des instructions Raydium/pump.fun.
+- État **en mémoire** (aucune DB) — perdu au redémarrage du backend.
+- Achat uniquement (pas de vente / gestion de position).
+- La tx est construite à l'approbation ; si tu tardes trop à signer, le blockhash
+  peut expirer → il suffit de re-**APPROVE** (RETRY) pour reconstruire une tx fraîche.
+- Deep links Phantom implémentés selon le protocole officiel ; le fallback
+  `connect <adresse>` (onglet TERM) permet de tester l'UI sans signer.
+
+---
+
+## Police monospace
+
+L'app utilise la monospace native (Menlo/monospace ≈ Courier). Pour bundler
+**JetBrains Mono** / **Fira Code** : ajoute le `.ttf` dans `mobile/assets/`,
+charge-le avec `expo-font`, puis remplace `MONO` dans `mobile/src/theme.ts`.
