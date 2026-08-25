@@ -1,6 +1,6 @@
 import { FlatList, Text, StyleSheet, View } from 'react-native';
 import { useMemo } from 'react';
-import { MONO, colors, levelColor, levelTag } from '../theme';
+import { FONT, FONT_BOLD, colors, levelColor, levelTag, spacing, fontSize } from '../theme';
 import type { LogEntry } from '../types';
 
 function hhmmss(ts: number): string {
@@ -11,18 +11,21 @@ function hhmmss(ts: number): string {
 
 function Line({ item }: { item: LogEntry }) {
   const color = levelColor[item.level];
+  const tag = levelTag[item.level];
   return (
     <View style={styles.line}>
       <Text style={styles.time}>{hhmmss(item.ts)}</Text>
-      <Text style={[styles.tag, { color }]}>{levelTag[item.level]}</Text>
-      <Text selectable style={[styles.msg, { color }]}>
-        <Text style={styles.src}>{item.source}</Text> {item.message}
+      <View style={[styles.marker, { backgroundColor: color }]} />
+      <Text selectable style={styles.msg}>
+        <Text style={styles.src}>{item.source}</Text>
+        {tag ? <Text style={[styles.tag, { color }]}> {tag}</Text> : null}
+        <Text style={{ color }}> {item.message}</Text>
       </Text>
     </View>
   );
 }
 
-/** Flux de logs défilant (inversé → collé au bas, façon console live). */
+/** Flux de logs défilant, le plus récent collé en bas. */
 export function LogView({ logs }: { logs: LogEntry[] }) {
   // inverted : index 0 = bas de l'écran → data en ordre "plus récent d'abord".
   const data = useMemo(() => [...logs].reverse(), [logs]);
@@ -41,11 +44,18 @@ export function LogView({ logs }: { logs: LogEntry[] }) {
 }
 
 const styles = StyleSheet.create({
-  list: { flex: 1, backgroundColor: colors.bg },
-  content: { paddingHorizontal: 10, paddingVertical: 8 },
-  line: { flexDirection: 'row', alignItems: 'flex-start', marginVertical: 1 },
-  time: { fontFamily: MONO, color: colors.gray, fontSize: 11, marginRight: 6 },
-  tag: { fontFamily: MONO, fontSize: 11, width: 22, marginRight: 6 },
-  msg: { fontFamily: MONO, fontSize: 12.5, flex: 1, lineHeight: 17 },
-  src: { color: colors.greenDim },
+  list: { flex: 1, backgroundColor: colors.primary },
+  content: { paddingHorizontal: spacing.screen, paddingVertical: spacing.sm },
+  line: { flexDirection: 'row', alignItems: 'flex-start', marginVertical: 2 },
+  time: { fontFamily: FONT, color: colors.muted, fontSize: 11, marginRight: spacing.sm },
+  marker: {
+    width: 3,
+    alignSelf: 'stretch',
+    borderRadius: 2,
+    marginRight: spacing.sm,
+    minHeight: 14,
+  },
+  tag: { fontFamily: FONT_BOLD, fontSize: fontSize.xs },
+  msg: { fontFamily: FONT, fontSize: fontSize.xs, flex: 1, lineHeight: 18 },
+  src: { color: colors.textSecond },
 });

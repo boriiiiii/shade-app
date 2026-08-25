@@ -2,17 +2,17 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import * as Linking from 'expo-linking';
 
-import { MONO, colors } from './src/theme';
+import { useFonts } from 'expo-font';
+
+import { FONT_ASSETS, colors, spacing } from './src/theme';
 import { API_URL } from './src/config';
 import { api } from './src/api';
 import { useBotSocket } from './src/useBotSocket';
@@ -35,15 +35,24 @@ import {
 import type { LogLevel, Order } from './src/types';
 
 import { StatusHeader } from './src/components/StatusHeader';
-import { TabBar } from './src/components/TabBar';
+import { TabBar, TAB_BAR_HEIGHT } from './src/components/TabBar';
+import {
+  IconHome,
+  IconTrend,
+  IconSnipe,
+  IconHistory,
+  IconMore,
+} from './src/components/icons';
 import { LogView } from './src/components/LogView';
 import { CommandBar } from './src/components/CommandBar';
 import { DashPanel } from './src/panels/DashPanel';
 import { CopyPanel } from './src/panels/CopyPanel';
 import { SnipePanel } from './src/panels/SnipePanel';
 import { OrdersPanel } from './src/panels/OrdersPanel';
+import { AcademyPanel } from './src/panels/AcademyPanel';
+import { FadeIn } from './src/components/motion';
 
-type Tab = 'dash' | 'copy' | 'snipe' | 'orders' | 'term';
+type Tab = 'dash' | 'copy' | 'snipe' | 'orders' | 'academy' | 'term';
 
 function short(a: string) {
   return `${a.slice(0, 6)}…${a.slice(-4)}`;
@@ -208,12 +217,14 @@ function Shell() {
 
   const pendingCount = orders.filter((o) => o.status === 'pending' || o.status === 'awaiting').length;
 
+  // Icônes issues de la maquette ; le libellé sert à l'accessibilité, la
+  // navbar du Figma n'affiche que les pictogrammes.
   const tabs = [
-    { key: 'dash', label: 'DASH' },
-    { key: 'copy', label: 'COPY', live: !!state?.copytrade.running },
-    { key: 'snipe', label: 'SNIPE', live: !!state?.sniping.running },
-    { key: 'orders', label: 'ORDERS', live: pendingCount > 0 },
-    { key: 'term', label: 'TERM' },
+    { key: 'dash', label: 'Accueil', icon: IconHome },
+    { key: 'copy', label: 'Copy trading', icon: IconTrend, live: !!state?.copytrade.running },
+    { key: 'snipe', label: 'Sniping', icon: IconSnipe, live: !!state?.sniping.running },
+    { key: 'orders', label: 'Ordres', icon: IconHistory, live: pendingCount > 0 },
+    { key: 'academy', label: 'Academy', icon: IconMore },
   ];
 
   const panelProps = { state, safe, notify };
@@ -227,11 +238,10 @@ function Shell() {
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
       <StatusBar style="light" />
       <StatusHeader state={state} connected={connected} connectedWallet={displayWallet} pending={pendingCount} />
-      <TabBar items={tabs} active={tab} onChange={(k) => setTab(k as Tab)} />
 
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {tab === 'term' ? (
-          <View style={styles.flex}>
+          <View style={styles.termContent}>
             <LogView logs={logs} />
             <CommandBar onSubmit={onSubmit} />
           </View>
@@ -243,6 +253,8 @@ function Shell() {
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
             >
+              {/* Fondu au changement d'onglet — rejoue a chaque bascule */}
+              <FadeIn trigger={tab}>
               {tab === 'dash' && (
                 <DashPanel
                   {...panelProps}
@@ -264,23 +276,28 @@ function Shell() {
                   onReject={rejectOrder}
                 />
               )}
+              {tab === 'academy' && <AcademyPanel onOpenConsole={() => setTab('term')} />}
+              </FadeIn>
             </ScrollView>
-
-            <Pressable style={styles.stripHeader} onPress={() => setTab('term')}>
-              <Text style={styles.stripTitle}>── CONSOLE · live logs</Text>
-              <Text style={styles.stripOpen}>[ shell ▸ ]</Text>
-            </Pressable>
-            <View style={styles.stripBody}>
-              <LogView logs={logs} />
-            </View>
           </View>
         )}
       </KeyboardAvoidingView>
+
+      <TabBar items={tabs} active={tab} onChange={(k) => setTab(k as Tab)} />
     </SafeAreaView>
   );
 }
 
 export default function App() {
+  // Satoshi doit être résolue avant le premier rendu : les styles y font
+  // référence par nom de famille. On garde le fond Shade pendant le chargement
+  // pour éviter un flash blanc.
+  const [fontsLoaded] = useFonts(FONT_ASSETS);
+
+  if (!fontsLoaded) {
+    return <View style={styles.root} />;
+  }
+
   return (
     <SafeAreaProvider>
       <Shell />
@@ -289,20 +306,13 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg },
+  root: { flex: 1, backgroundColor: colors.primary },
   flex: { flex: 1 },
-  panelContent: { padding: 12, paddingTop: 18 },
-  stripHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderTopWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.bgPanel,
+  panelContent: {
+    paddingHorizontal: spacing.screen,
+    paddingTop: spacing.lg,
+    // La barre flotte au-dessus : on lui réserve sa hauteur, plus une marge.
+    paddingBottom: TAB_BAR_HEIGHT + spacing.xl,
   },
-  stripTitle: { fontFamily: MONO, color: colors.greenDim, fontSize: 10.5, letterSpacing: 0.5 },
-  stripOpen: { fontFamily: MONO, color: colors.amber, fontSize: 10.5, fontWeight: '700' },
-  stripBody: { height: 120, backgroundColor: colors.bg },
+  termContent: { flex: 1, paddingBottom: TAB_BAR_HEIGHT },
 });

@@ -1,12 +1,16 @@
 import { useRef, useState } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
-import { MONO, colors } from '../theme';
-import { Cursor } from './Cursor';
+import { FONT, FONT_BOLD, colors, radius, spacing, fontSize } from '../theme';
 
-/** Ligne de commande façon shell : prompt + saisie + curseur clignotant au repos. */
+/**
+ * Barre de saisie de commande.
+ *
+ * Le comportement est identique à la version terminal (même `onSubmit`, même
+ * validation) ; seule la présentation passe à la charte Shade : champ arrondi
+ * sur fond sombre et bouton d'envoi, sans prompt ni curseur clignotant.
+ */
 export function CommandBar({ onSubmit }: { onSubmit: (cmd: string) => void }) {
   const [value, setValue] = useState('');
-  const [focused, setFocused] = useState(false);
   const ref = useRef<TextInput>(null);
 
   const submit = () => {
@@ -16,22 +20,20 @@ export function CommandBar({ onSubmit }: { onSubmit: (cmd: string) => void }) {
     setValue('');
   };
 
+  const empty = value.trim() === '';
+
   return (
-    <Pressable style={styles.wrap} onPress={() => ref.current?.focus()}>
-      <Text style={styles.prompt}>shade</Text>
-      <Text style={styles.dollar}> $ </Text>
-      <View style={styles.inputRow}>
+    <View style={styles.wrap}>
+      <Pressable style={styles.field} onPress={() => ref.current?.focus()}>
         <TextInput
           ref={ref}
           value={value}
           onChangeText={setValue}
           onSubmitEditing={submit}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
-          placeholder="type a command — help"
-          placeholderTextColor={colors.gray}
+          placeholder="Tape une commande — help"
+          placeholderTextColor={colors.muted}
           style={styles.input}
-          selectionColor={colors.green}
+          selectionColor={colors.secondary}
           autoCapitalize="none"
           autoCorrect={false}
           autoComplete="off"
@@ -40,9 +42,19 @@ export function CommandBar({ onSubmit }: { onSubmit: (cmd: string) => void }) {
           submitBehavior="submit"
           autoFocus
         />
-        {value === '' && !focused ? <Cursor /> : null}
-      </View>
-    </Pressable>
+      </Pressable>
+      <Pressable
+        onPress={submit}
+        disabled={empty}
+        style={({ pressed }) => [
+          styles.send,
+          empty ? styles.sendOff : null,
+          pressed && !empty ? styles.sendPressed : null,
+        ]}
+      >
+        <Text style={[styles.sendText, empty ? { color: colors.muted } : null]}>Envoyer</Text>
+      </Pressable>
+    </View>
   );
 }
 
@@ -50,14 +62,33 @@ const styles = StyleSheet.create({
   wrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.bgPanel,
-    borderTopWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: 12,
+    gap: spacing.sm,
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.screen,
+    paddingVertical: spacing.md,
+  },
+  field: {
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: colors.glassFill,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.lg,
     paddingVertical: 10,
   },
-  prompt: { fontFamily: MONO, color: colors.green, fontSize: 14, fontWeight: '700' },
-  dollar: { fontFamily: MONO, color: colors.amber, fontSize: 14, fontWeight: '700' },
-  inputRow: { flex: 1, flexDirection: 'row', alignItems: 'center' },
-  input: { flex: 1, fontFamily: MONO, color: colors.white, fontSize: 14, padding: 0 },
+  input: { fontFamily: FONT, color: colors.text, fontSize: fontSize.sm, padding: 0 },
+  send: {
+    backgroundColor: colors.secondary,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 11,
+  },
+  sendOff: { backgroundColor: colors.surface },
+  sendPressed: { opacity: 0.8 },
+  sendText: {
+    fontFamily: FONT_BOLD,
+    color: colors.text,
+    fontSize: fontSize.xs,
+  },
 });
